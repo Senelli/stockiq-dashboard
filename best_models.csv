@@ -1,0 +1,13 @@
+Entity,Model,Accuracy (%),ROC-AUC
+AAPL,Decision Tree Classifier,60.0,0.5744
+AMD,LSTM (Classification),52.78,0.6223
+AMZN,Logistic Regression,61.29,0.5525
+GOOGL,LSTM (Classification),63.64,0.6026
+IBM,LSTM (Classification),56.25,0.6311
+INTC,XGBoost Classifier,60.53,0.65
+META,Logistic Regression,64.0,0.6651
+MSFT,Decision Tree Classifier,55.56,0.5699
+NVDA,Logistic Regression,55.81,0.4735
+ORCL,SVM Classifier,59.57,0.3551
+PLTR,LSTM (Classification),54.72,0.398
+TSLA,Gradient Boosting Classifier,69.7,0.6682
