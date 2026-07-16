@@ -37,6 +37,8 @@ BORDER     = "#2A3F5F"
 st.markdown(f"""
 <style>
     /* Main background */
+    header[data-testid="stHeader"] { display: none; }
+    .stApp { margin-top: -80px; }
     .stApp {{ background-color: {DARK_BG}; color: {TEXT_MAIN}; }}
     .block-container {{ padding: 1.5rem 2rem 2rem 2rem; max-width: 1400px; }}
 
