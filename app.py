@@ -24,7 +24,7 @@ st.set_page_config(
 
 # ── Theme colors ──────────────────────────────────────────────────────────────
 DARK_BG    = "#0D1B2A"
-CARD_BG    = "#1E3A5F"
+CARD_BG    = "#1A2940"
 ACCENT     = "#00C9A7"
 ACCENT2    = "#F4B942"
 TEXT_MAIN  = "#E8F0FE"
@@ -158,6 +158,10 @@ st.markdown(f"""
     }}
     [class*="ValueContainer"] *, [class*="singleValue"] {{
         color: white !important;
+    }}
+    [data-testid="stSidebar"] [data-baseweb="select"] * {{
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
     }}
 </style>
 """, unsafe_allow_html=True)
