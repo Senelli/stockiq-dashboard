@@ -273,10 +273,29 @@ sent_label  = 'Positive' if sent_score >= 60 else 'Neutral' if sent_score >= 40 
 sent_color  = POSITIVE if sent_score >= 60 else ACCENT2 if sent_score >= 40 else NEGATIVE
 
 # Price info
-price_now   = tkr_last['close']
-price_prev  = tkr_prev['close']
-price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
-price_color = POSITIVE if price_chg >= 0 else NEGATIVE
+# Price info — prefer live_predictions.csv if available
+price_now  = tkr_last['close']
+price_prev = tkr_prev['close']
+price_date = last_date
+
+if live_preds is not None:
+    lp_tkr = live_preds[live_preds['ticker'] == selected_ticker]
+    if len(lp_tkr) and pd.notna(lp_tkr.iloc[-1].get('close', None)):
+        live_row   = lp_tkr.sort_values('date').iloc[-1]
+        price_now  = live_row['close']
+        price_date = pd.to_datetime(live_row['date'])
+        if pd.notna(live_row.get('daily_return', None)):
+            price_chg   = live_row['daily_return'] * 100
+            price_color = POSITIVE if price_chg >= 0 else NEGATIVE
+        else:
+            price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
+            price_color = POSITIVE if price_chg >= 0 else NEGATIVE
+    else:
+        price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
+        price_color = POSITIVE if price_chg >= 0 else NEGATIVE
+else:
+    price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
+    price_color = POSITIVE if price_chg >= 0 else NEGATIVE
 
 # Topic mix today
 topic_cols  = ['ai_innovation','collaboration','leadership','regulation','litigation']
@@ -335,7 +354,7 @@ with c2:
             <span style="color:{price_color};">{p_arrow} {abs(price_chg):.2f}% vs prev day</span>
         </div>
         <div class="card-sub" style="margin-top:0.3rem;">
-            As of {last_date.strftime('%b %d, %Y')}
+            As of {price_date.strftime('%b %d, %Y')} {'· 🟢 Live' if live_preds is not None and len(live_preds[live_preds['ticker']==selected_ticker]) > 0 else ''}
         </div>
     </div>
     """, unsafe_allow_html=True)
