@@ -268,8 +268,18 @@ company_name = COMPANY_NAMES.get(selected_ticker, selected_ticker)
 sector = SECTOR_MAP.get(selected_ticker, '')
 
 st.markdown(f"""
-<div class="page-title">{selected_ticker} — {company_name}</div>
-<div class="page-sub">{sector} &nbsp;·&nbsp; AI Sentiment & Prediction Dashboard</div>
+<div style="font-size:0.85rem; font-weight:700; letter-spacing:0.12em;
+            color:#00C9A7; text-transform:uppercase; margin-bottom:0.3rem;">
+    Currently Viewing
+</div>
+<div style="font-size:2.8rem; font-weight:900; color:#E8F0FE; line-height:1.1;
+            margin-bottom:0.2rem;">
+    {company_name}
+</div>
+<div style="font-size:1.2rem; font-weight:600; color:#8A9BB5; margin-bottom:0.2rem;">
+    {selected_ticker} &nbsp;·&nbsp; {sector}
+</div>
+<div class="page-sub">AI Sentiment & Prediction Dashboard</div>
 """, unsafe_allow_html=True)
 
 # ── Get ticker data ───────────────────────────────────────────────────────────
