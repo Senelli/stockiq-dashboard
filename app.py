@@ -133,6 +133,9 @@ st.markdown(f"""
         border-color: {BORDER};
         color: {TEXT_MAIN};
     }}
+    .stSelectbox > div > div > div {{
+        color: {TEXT_MAIN} !important;
+    }}
     div[data-testid="metric-container"] {{
         background: {CARD_BG};
         border: 1px solid {BORDER};
