@@ -440,7 +440,7 @@ with left_col:
         orientation='h',
         marker=dict(color=list(s_colors), opacity=0.85),
         text=[str(v) for v in s_vals],
-        textposition='outside',
+        textposition='auto',
         textfont=dict(color=TEXT_MAIN, size=13, family='Arial Black'),
     ))
     fig_topic.update_layout(
