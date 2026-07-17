@@ -37,10 +37,8 @@ BORDER     = "#2A3F5F"
 st.markdown(f"""
 <style>
     /* Main background */
-    header[data-testid="stHeader"] {{ display: none; }}
-    .stApp {{ margin-top: -80px; }}
     .stApp {{ background-color: {DARK_BG}; color: {TEXT_MAIN}; }}
-    .block-container {{ padding: 3rem 2rem 2rem 2rem; max-width: 1400px; }}
+    .block-container {{ padding: 1.5rem 2rem 2rem 2rem; max-width: 1400px; }}
 
     /* Sidebar */
     [data-testid="stSidebar"] {{ background-color: {CARD_BG}; border-right: 1px solid {BORDER}; }}
@@ -133,9 +131,6 @@ st.markdown(f"""
         border-color: {BORDER};
         color: {TEXT_MAIN};
     }}
-    .stSelectbox > div > div > div {{
-        color: {TEXT_MAIN} !important;
-    }}
     div[data-testid="metric-container"] {{
         background: {CARD_BG};
         border: 1px solid {BORDER};
@@ -152,16 +147,6 @@ st.markdown(f"""
     .stTabs [aria-selected="true"] {{
         color: {ACCENT};
         border-bottom-color: {ACCENT};
-    }}
-    [data-baseweb="select"] input, [data-baseweb="select"] [aria-selected] {{
-        color: white !important;
-    }}
-    [class*="ValueContainer"] *, [class*="singleValue"] {{
-        color: white !important;
-    }}
-    [data-testid="stSidebar"] [data-baseweb="select"] * {{
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -268,18 +253,8 @@ company_name = COMPANY_NAMES.get(selected_ticker, selected_ticker)
 sector = SECTOR_MAP.get(selected_ticker, '')
 
 st.markdown(f"""
-<div style="font-size:0.85rem; font-weight:700; letter-spacing:0.12em;
-            color:#00C9A7; text-transform:uppercase; margin-bottom:0.3rem;">
-    Currently Viewing
-</div>
-<div style="font-size:2.8rem; font-weight:900; color:#E8F0FE; line-height:1.1;
-            margin-bottom:0.2rem;">
-    {company_name}
-</div>
-<div style="font-size:1.2rem; font-weight:600; color:#8A9BB5; margin-bottom:0.2rem;">
-    {selected_ticker} &nbsp;·&nbsp; {sector}
-</div>
-<div class="page-sub">AI Sentiment & Prediction Dashboard</div>
+<div class="page-title">{selected_ticker} — {company_name}</div>
+<div class="page-sub">{sector} &nbsp;·&nbsp; AI Sentiment & Prediction Dashboard</div>
 """, unsafe_allow_html=True)
 
 # ── Get ticker data ───────────────────────────────────────────────────────────
@@ -292,10 +267,30 @@ tkr_prev = tkr.iloc[-2] if len(tkr) > 1 else tkr.iloc[-1]
 sent_score  = int((tkr_last['sentiment_mean'] + 1) / 2 * 100)
 sent_prev   = int((tkr_prev['sentiment_mean'] + 1) / 2 * 100)
 sent_delta  = sent_score - sent_prev
-sent_label  = 'Positive' if sent_score >= 60 else 'Neutral' if sent_score >= 40 else 'Negative'
-sent_color  = POSITIVE if sent_score >= 60 else ACCENT2 if sent_score >= 40 else NEGATIVE
+if sent_score >= 70:
+    sent_label = 'Strongly Bullish'
+    sent_color = '#00E676'
+elif sent_score >= 55:
+    sent_label = 'Bullish'
+    sent_color = POSITIVE
+elif sent_score >= 45:
+    sent_label = 'Neutral'
+    sent_color = ACCENT2
+elif sent_score >= 30:
+    sent_label = 'Bearish'
+    sent_color = '#FF7043'
+else:
+    sent_label = 'Strongly Bearish'
+    sent_color = NEGATIVE
 
-# Price info
+# Override with live label if available
+if live_preds is not None:
+    lp_sent = live_preds[live_preds['ticker'] == selected_ticker]
+    if len(lp_sent) and 'sentiment_label' in lp_sent.columns:
+        live_label = lp_sent.iloc[-1].get('sentiment_label', '')
+        if live_label:
+            sent_label = live_label
+
 # Price info — prefer live_predictions.csv if available
 price_now  = tkr_last['close']
 price_prev = tkr_prev['close']
@@ -425,44 +420,150 @@ st.markdown("<br>", unsafe_allow_html=True)
 left_col, right_col = st.columns([1, 2])
 
 with left_col:
-    st.markdown(f'<div class="section-header">Today\'s Topic Mix</div>', unsafe_allow_html=True)
+    topic_tab1, topic_tab2 = st.tabs(["📊 Topic Mix", "🔍 Key Entities"])
 
-    # Horizontal bar chart
-    fig_topic = go.Figure()
-    colors_topic = [ACCENT, '#4ECDC4', '#45B7D1', ACCENT2, NEGATIVE]
-    sorted_pairs = sorted(zip(topic_vals, topic_labels, colors_topic),
-                          key=lambda x: x[0])
-    s_vals, s_labels, s_colors = zip(*sorted_pairs) if sorted_pairs else ([],[],[])
+    with topic_tab1:
+        # Horizontal bar chart — keyword categories
+        fig_topic = go.Figure()
+        colors_topic = [ACCENT, '#4ECDC4', '#45B7D1', ACCENT2, NEGATIVE]
+        sorted_pairs = sorted(zip(topic_vals, topic_labels, colors_topic),
+                              key=lambda x: x[0])
+        s_vals, s_labels, s_colors = zip(*sorted_pairs) if sorted_pairs else ([],[],[])
 
-    fig_topic.add_trace(go.Bar(
-        x=list(s_vals),
-        y=list(s_labels),
-        orientation='h',
-        marker=dict(color=list(s_colors), opacity=0.85),
-        text=[str(v) for v in s_vals],
-        textposition='auto',
-        textfont=dict(color=TEXT_MAIN, size=13, family='Arial Black'),
-    ))
-    fig_topic.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=0, r=40, t=10, b=10),
-        height=260,
-        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False,
-                   color=TEXT_DIM),
-        yaxis=dict(showgrid=False, color=TEXT_MAIN, tickfont=dict(size=12)),
-        showlegend=False,
-        font=dict(color=TEXT_MAIN),
-    )
-    st.plotly_chart(fig_topic, use_container_width=True, config={'displayModeBar': False})
+        fig_topic.add_trace(go.Bar(
+            x=list(s_vals),
+            y=list(s_labels),
+            orientation='h',
+            marker=dict(color=list(s_colors), opacity=0.85),
+            text=[str(v) for v in s_vals],
+            textposition='auto',
+            textfont=dict(color=TEXT_MAIN, size=13, family='Arial Black'),
+        ))
+        fig_topic.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=40, t=10, b=10),
+            height=240,
+            xaxis=dict(showgrid=False, showticklabels=False, zeroline=False,
+                       color=TEXT_DIM),
+            yaxis=dict(showgrid=False, color=TEXT_MAIN, tickfont=dict(size=12)),
+            showlegend=False,
+            font=dict(color=TEXT_MAIN),
+        )
+        st.plotly_chart(fig_topic, use_container_width=True,
+                        config={'displayModeBar': False})
 
-    # Article count note
-    other_arts = max(0, total_arts - sum(topic_vals))
-    st.markdown(f"""
-    <div style="font-size:0.78rem; color:{TEXT_DIM}; margin-top:-1rem; padding: 0 0.5rem;">
-        {total_arts} articles on last trading day · {other_arts} uncategorized
-    </div>
-    """, unsafe_allow_html=True)
+        other_arts = max(0, total_arts - sum(topic_vals))
+        st.markdown(f"""
+        <div style="font-size:0.75rem; color:{TEXT_DIM}; margin-top:-1rem; padding: 0 0.3rem;">
+            {total_arts} articles · {other_arts} uncategorized
+        </div>
+        """, unsafe_allow_html=True)
+
+    with topic_tab2:
+        # NER — extract entities from today's live articles using spaCy
+        @st.cache_resource
+        def load_nlp():
+            try:
+                import spacy
+                try:
+                    return spacy.load("en_core_web_sm")
+                except OSError:
+                    import subprocess, sys
+                    subprocess.run([sys.executable, "-m", "spacy", "download",
+                                    "en_core_web_sm"], capture_output=True)
+                    return spacy.load("en_core_web_sm")
+            except ImportError:
+                return None
+
+        nlp = load_nlp()
+
+        # Get today's articles from live data
+        entities = {
+            'People':     [],
+            'Companies':  [],
+            'Products':   [],
+            'Locations':  [],
+            'Events':     [],
+        }
+
+        LABEL_MAP = {
+            'PERSON':  'People',
+            'ORG':     'Companies',
+            'PRODUCT': 'Products',
+            'GPE':     'Locations',
+            'LOC':     'Locations',
+            'EVENT':   'Events',
+            'WORK_OF_ART': 'Products',
+            'LAW':     'Events',
+        }
+
+        # Skip words that are just ticker symbols or generic finance words
+        SKIP_WORDS = {selected_ticker, company_name.upper(), 'Inc', 'Corp',
+                      'LLC', 'Ltd', 'NYSE', 'NASDAQ', 'ETF', 'SEC', 'AI',
+                      'CEO', 'CFO', 'Q1', 'Q2', 'Q3', 'Q4', 'USD',
+                      selected_ticker.lower(), company_name}
+
+        if nlp is not None and live_preds is not None:
+            # Read today's raw articles if available
+            from pathlib import Path
+            import glob
+            data_dir = Path(__file__).parent / "data"
+            today_str = datetime.today().strftime('%Y%m%d')
+            article_files = sorted(glob.glob(str(data_dir / f"articles_*.csv")))
+
+            if article_files:
+                latest_file = article_files[-1]
+                try:
+                    arts_df = pd.read_csv(latest_file)
+                    arts_df = arts_df[arts_df['ticker'] == selected_ticker]
+                    texts = (arts_df['title'].fillna('') + ' ' +
+                             arts_df['summary'].fillna('')).tolist()
+
+                    from collections import Counter
+                    ent_counters = {k: Counter() for k in entities}
+
+                    for text in texts[:30]:  # limit to 30 articles for speed
+                        doc = nlp(text[:500])
+                        for ent in doc.ents:
+                            mapped = LABEL_MAP.get(ent.label_)
+                            if mapped and ent.text.strip() not in SKIP_WORDS:
+                                ent_counters[mapped][ent.text.strip()] += 1
+
+                    for cat, counter in ent_counters.items():
+                        entities[cat] = [item for item, _ in counter.most_common(5)]
+                except Exception:
+                    pass
+
+        # Display entities
+        has_any = any(len(v) > 0 for v in entities.values())
+
+        if has_any:
+            for cat, ents in entities.items():
+                if ents:
+                    st.markdown(f"""
+                    <div style="margin-bottom:0.6rem;">
+                        <div style="font-size:0.68rem; font-weight:700;
+                                    letter-spacing:0.1em; color:{TEXT_DIM};
+                                    text-transform:uppercase; margin-bottom:0.25rem;">
+                            {cat}
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:0.3rem;">
+                            {''.join(f'''<span style="background:rgba(0,201,167,0.12);
+                                border:1px solid rgba(0,201,167,0.3);
+                                border-radius:4px; padding:0.15rem 0.5rem;
+                                font-size:0.78rem; color:{TEXT_MAIN};">{e}</span>'''
+                                for e in ents)}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="font-size:0.82rem; color:{TEXT_DIM}; padding:1rem 0;">
+                Entity data available after daily refresh runs.<br>
+                Trigger a manual refresh from GitHub Actions to populate.
+            </div>
+            """, unsafe_allow_html=True)
 
 with right_col:
     st.markdown(f'<div class="section-header">Sentiment vs Price ({lookback}D)</div>',
