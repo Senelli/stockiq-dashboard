@@ -153,6 +153,12 @@ st.markdown(f"""
         color: {ACCENT};
         border-bottom-color: {ACCENT};
     }}
+    [data-baseweb="select"] input, [data-baseweb="select"] [aria-selected] {{
+        color: white !important;
+    }}
+    [class*="ValueContainer"] *, [class*="singleValue"] {{
+        color: white !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
