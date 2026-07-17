@@ -446,7 +446,7 @@ with left_col:
     fig_topic.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=0, r=80, t=10, b=10),
+        margin=dict(l=0, r=40, t=10, b=10),
         height=260,
         xaxis=dict(showgrid=False, showticklabels=False, zeroline=False,
                    color=TEXT_DIM),
