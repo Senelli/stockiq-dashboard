@@ -163,25 +163,6 @@ st.markdown(f"""
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
     }}
-
-    [data-testid="collapsedControl"] {{
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        background-color: {ACCENT} !important;
-        border-radius: 50% !important;
-        width: 40px !important;
-        height: 40px !important;
-        position: fixed !important;
-        top: 10px !important;
-        left: 10px !important;
-        z-index: 999999 !important;
-    }}
-    [data-testid="collapsedControl"] svg {{
-        fill: #000000 !important;
-        width: 20px !important;
-        height: 20px !important;
-    }}
 </style>
 """, unsafe_allow_html=True)
 
