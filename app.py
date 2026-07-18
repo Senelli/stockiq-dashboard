@@ -200,7 +200,7 @@ COMPANY_NAMES = {
 ALL_TICKERS = sorted(daily['ticker'].unique())
 
 # ── Top selectors (work on both desktop and mobile) ───────────────────────────
-top_col1, top_col2, top_col3 = st.columns([3, 1, 2])
+top_col1, top_col2 = st.columns([3, 1])
 with top_col1:
     selected_ticker = st.selectbox(
         "Select Stock",
@@ -216,13 +216,9 @@ with top_col2:
         format_func=lambda x: f"{x}D",
         key="top_lookback"
     )
-with top_col3:
-    st.markdown(f"""
-    <div style="font-size:0.75rem; color:{TEXT_DIM}; padding-top:0.5rem;">
-        <b style="color:{ACCENT};">📊 StockIQ</b> · Cal Poly Pomona MSBA Capstone<br>
-        Phase 2 Models: 2a–2h · 17,761 articles · 16 stocks · Jan 2022–Dec 2025
-    </div>
-    """, unsafe_allow_html=True)
+
+st.markdown("<hr style='margin:0.5rem 0 1rem 0; border-color:#2A3F5F;'>",
+            unsafe_allow_html=True)
 
 # ── Sidebar (info only — no selectors) ───────────────────────────────────────
 with st.sidebar:
