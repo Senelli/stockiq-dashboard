@@ -37,7 +37,9 @@ BORDER     = "#2A3F5F"
 st.markdown(f"""
 <style>
     /* Main background */
-    header[data-testid="stHeader"] {{ display: none; }}
+    @media (min-width: 769px) {{
+        header[data-testid="stHeader"] {{ display: none; }}
+    }}
     .stApp {{ margin-top: 0px; }}
     .stApp {{ background-color: {DARK_BG}; color: {TEXT_MAIN}; }}
     .block-container {{ padding: 3rem 2rem 2rem 2rem; max-width: 1400px; }}
