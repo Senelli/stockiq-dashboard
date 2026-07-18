@@ -267,26 +267,6 @@ with st.sidebar:
 company_name = COMPANY_NAMES.get(selected_ticker, selected_ticker)
 sector = SECTOR_MAP.get(selected_ticker, '')
 
-# Mobile-friendly stock selector on main page
-mobile_col1, mobile_col2 = st.columns([2, 1])
-with mobile_col1:
-    mobile_ticker = st.selectbox(
-        "Stock",
-        ALL_TICKERS,
-        index=ALL_TICKERS.index(selected_ticker),
-        format_func=lambda t: f"{t} — {COMPANY_NAMES.get(t, t)}",
-        key="mobile_selector"
-    )
-    selected_ticker = mobile_ticker
-with mobile_col2:
-    mobile_lookback = st.selectbox(
-        "Window",
-        [14, 30, 60, 90],
-        format_func=lambda x: f"{x}D",
-        key="mobile_lookback"
-    )
-    lookback = mobile_lookback
-
 st.markdown(f"""
 <div style="font-size:0.85rem; font-weight:700; letter-spacing:0.12em;
             color:#00C9A7; text-transform:uppercase; margin-bottom:0.3rem;">
