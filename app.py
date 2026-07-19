@@ -263,9 +263,14 @@ with st.sidebar:
     # Data freshness
     tkr_data = daily[daily['ticker'] == selected_ticker]
     last_date = tkr_data['matched_market_date'].max()
+    if live_preds is not None:
+        lp_tkr = live_preds[live_preds['ticker'] == selected_ticker]
+        if len(lp_tkr):
+            last_date = pd.to_datetime(lp_tkr['date'].max())
     st.markdown(f"""
     <div style="font-size:0.72rem; color:{TEXT_DIM}; text-align:center;">
-        Last data: <b style="color:{TEXT_MAIN};">{last_date.strftime('%b %d, %Y')}</b>
+        <b style="color:{TEXT_MAIN};">{last_date.strftime('%b %d, %Y')}</b> · 
+        <span style="color:{ACCENT};">🟢 Live</span>
     </div>
     """, unsafe_allow_html=True)
 
