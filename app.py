@@ -269,7 +269,7 @@ with st.sidebar:
             last_date = pd.to_datetime(lp_tkr['date'].max())
     st.markdown(f"""
     <div style="font-size:0.72rem; color:{TEXT_DIM}; text-align:center;">
-        Last data: <b style="color:{TEXT_MAIN};">{last_date.strftime('%b %d, %Y')}</b>
+        Last updated: <b style="color:{TEXT_MAIN};">{last_date.strftime('%b %d, %Y')}</b>
     </div>
     """, unsafe_allow_html=True)
 
