@@ -38,7 +38,7 @@ st.markdown(f"""
 <style>
     /* Main background */
     .stApp {{ background-color: {DARK_BG}; color: {TEXT_MAIN}; }}
-    .block-container {{ padding: 5rem 2rem 2rem 2rem; max-width: 1400px; }}
+    .block-container {{ padding: 3rem 2rem 2rem 2rem; max-width: 1400px; }}
 
     /* Sidebar */
     [data-testid="stSidebar"] {{ background-color: {CARD_BG}; border-right: 1px solid {BORDER}; }}
