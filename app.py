@@ -169,6 +169,39 @@ st.markdown(f"""
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
     }}
+    header[data-testid="stHeader"] {{
+        background-color: {DARK_BG} !important;
+        border-bottom: 1px solid {BORDER} !important;
+    }}
+    header[data-testid="stHeader"] * {{
+        color: {TEXT_MAIN} !important;
+        fill: {TEXT_MAIN} !important;
+    }}
+    header[data-testid="stHeader"] a,
+    header[data-testid="stHeader"] button:not([data-testid="collapsedControl"]) {{
+        display: none !important;
+    }}
+    div[data-baseweb="select"] > div:first-child {{
+        background-color: #1E3A5F !important;
+        border-color: {ACCENT} !important;
+    }}
+    div[data-baseweb="select"] input {{
+        color: #FFFFFF !important;
+        caret-color: #FFFFFF !important;
+    }}
+    div[data-baseweb="popover"] li {{
+        background-color: #1E3A5F !important;
+        color: #FFFFFF !important;
+    }}
+    div[data-baseweb="popover"] li:hover {{
+        background-color: {ACCENT} !important;
+        color: #000000 !important;
+    }}
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div {{
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -308,7 +341,8 @@ if live_preds is not None:
         if live_daily_row['matched_market_date'] > tkr['matched_market_date'].max():
             tkr = pd.concat([tkr, live_df], ignore_index=True).sort_values('matched_market_date')
 
-tkr_recent = tkr.tail(lookback)
+cutoff = tkr['matched_market_date'].max() - pd.Timedelta(days=lookback * 2)
+tkr_recent = tkr[tkr['matched_market_date'] >= cutoff].tail(lookback)
 tkr_last   = tkr.iloc[-1]
 tkr_prev   = tkr.iloc[-2] if len(tkr) > 1 else tkr.iloc[-1]
 price_date = tkr_last['matched_market_date']
@@ -637,7 +671,8 @@ with tab2:
     st.markdown(f'<div class="section-header">Daily Sentiment History — {selected_ticker} (Last {lookback} days)</div>',
                 unsafe_allow_html=True)
 
-    hist = tkr.tail(lookback)[['matched_market_date','sentiment_mean',
+    hist_cutoff = tkr['matched_market_date'].max() - pd.Timedelta(days=lookback * 2)
+    hist = tkr[tkr['matched_market_date'] >= hist_cutoff].tail(lookback)[['matched_market_date','sentiment_mean',
                                 'close','article_count','ai_innovation',
                                 'collaboration','leadership','regulation','litigation',
                                 'daily_return']].copy()
@@ -670,6 +705,26 @@ with tab3:
     rows = []
     for t in ALL_TICKERS:
         t_data = daily[daily['ticker'] == t].sort_values('matched_market_date')
+        # Merge live data for this ticker
+        if live_preds is not None:
+            lp_t = live_preds[live_preds['ticker'] == t].copy()
+            if len(lp_t):
+                lp_t_row = lp_t.sort_values('date').iloc[-1]
+                live_t = pd.DataFrame([{
+                    'ticker': t,
+                    'matched_market_date': pd.to_datetime(lp_t_row['date']),
+                    'sentiment_mean': float(lp_t_row.get('sentiment_mean', 0)),
+                    'close': float(lp_t_row.get('close', t_data.iloc[-1]['close'] if len(t_data) else 0)),
+                    'daily_return': float(lp_t_row.get('daily_return', 0)),
+                    'article_count': int(lp_t_row.get('article_count', 0)),
+                    'ai_innovation': int(lp_t_row.get('ai_innovation', 0)),
+                    'collaboration': int(lp_t_row.get('collaboration', 0)),
+                    'leadership': int(lp_t_row.get('leadership', 0)),
+                    'regulation': int(lp_t_row.get('regulation', 0)),
+                    'litigation': int(lp_t_row.get('litigation', 0)),
+                }])
+                if len(t_data) == 0 or live_t.iloc[0]['matched_market_date'] > t_data['matched_market_date'].max():
+                    t_data = pd.concat([t_data, live_t], ignore_index=True).sort_values('matched_market_date')
         if len(t_data) == 0:
             continue
         last = t_data.iloc[-1]
