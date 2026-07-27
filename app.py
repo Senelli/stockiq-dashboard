@@ -177,7 +177,8 @@ st.markdown(f"""
         color: {TEXT_MAIN} !important;
         fill: {TEXT_MAIN} !important;
     }}
-    [data-testid="stToolbarActions"] {{
+    header[data-testid="stHeader"] a,
+    header[data-testid="stHeader"] button:not([data-testid="collapsedControl"]) {{
         display: none !important;
     }}
     div[data-baseweb="select"] > div:first-child {{
