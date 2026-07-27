@@ -37,16 +37,8 @@ BORDER     = "#2A3F5F"
 st.markdown(f"""
 <style>
     /* Main background */
-    header[data-testid="stHeader"] {{
-        background-color: {DARK_BG} !important;
-        border-bottom: 1px solid {BORDER};
-    }}
-    header[data-testid="stHeader"] * {{
-        color: {TEXT_MAIN} !important;
-    }}
-    .stApp {{ margin-top: 0px; }}
     .stApp {{ background-color: {DARK_BG}; color: {TEXT_MAIN}; }}
-    .block-container {{ padding: 3rem 2rem 2rem 2rem; max-width: 1400px; }}
+    .block-container {{ padding: 1.5rem 2rem 2rem 2rem; max-width: 1400px; }}
 
     /* Sidebar */
     [data-testid="stSidebar"] {{ background-color: {CARD_BG}; border-right: 1px solid {BORDER}; }}
@@ -139,9 +131,6 @@ st.markdown(f"""
         border-color: {BORDER};
         color: {TEXT_MAIN};
     }}
-    .stSelectbox > div > div > div {{
-        color: {TEXT_MAIN} !important;
-    }}
     div[data-testid="metric-container"] {{
         background: {CARD_BG};
         border: 1px solid {BORDER};
@@ -159,13 +148,24 @@ st.markdown(f"""
         color: {ACCENT};
         border-bottom-color: {ACCENT};
     }}
-    [data-baseweb="select"] input, [data-baseweb="select"] [aria-selected] {{
-        color: white !important;
+    div[data-baseweb="select"] > div:first-child {{
+        background-color: #1E3A5F !important;
+        border-color: {ACCENT} !important;
     }}
-    [class*="ValueContainer"] *, [class*="singleValue"] {{
-        color: white !important;
+    div[data-baseweb="select"] input {{
+        color: #FFFFFF !important;
+        caret-color: #FFFFFF !important;
     }}
-    [data-testid="stSidebar"] [data-baseweb="select"] * {{
+    div[data-baseweb="popover"] li {{
+        background-color: #1E3A5F !important;
+        color: #FFFFFF !important;
+    }}
+    div[data-baseweb="popover"] li:hover {{
+        background-color: {ACCENT} !important;
+        color: #000000 !important;
+    }}
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div {{
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
     }}
@@ -221,6 +221,8 @@ COMPANY_NAMES = {
 ALL_TICKERS = sorted(daily['ticker'].unique())
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
+
+# ── Sidebar (info only — no selectors) ───────────────────────────────────────
 with st.sidebar:
     st.markdown(f"""
     <div style="text-align:center; padding: 1rem 0 1.5rem 0;">
@@ -263,13 +265,9 @@ with st.sidebar:
     # Data freshness
     tkr_data = daily[daily['ticker'] == selected_ticker]
     last_date = tkr_data['matched_market_date'].max()
-    if live_preds is not None:
-        lp_tkr = live_preds[live_preds['ticker'] == selected_ticker]
-        if len(lp_tkr):
-            last_date = pd.to_datetime(lp_tkr['date'].max())
     st.markdown(f"""
     <div style="font-size:0.72rem; color:{TEXT_DIM}; text-align:center;">
-        Last updated: <b style="color:{TEXT_MAIN};">{last_date.strftime('%b %d, %Y')}</b>
+        Last data: <b style="color:{TEXT_MAIN};">{last_date.strftime('%b %d, %Y')}</b>
     </div>
     """, unsafe_allow_html=True)
 
@@ -278,63 +276,82 @@ company_name = COMPANY_NAMES.get(selected_ticker, selected_ticker)
 sector = SECTOR_MAP.get(selected_ticker, '')
 
 st.markdown(f"""
-<div style="font-size:0.85rem; font-weight:700; letter-spacing:0.12em;
-            color:#00C9A7; text-transform:uppercase; margin-bottom:0.3rem;">
-    Currently Viewing
-</div>
-<div style="font-size:2.8rem; font-weight:900; color:#E8F0FE; line-height:1.1;
-            margin-bottom:0.2rem;">
-    {company_name}
-</div>
-<div style="font-size:1.2rem; font-weight:600; color:#8A9BB5; margin-bottom:0.2rem;">
-    {selected_ticker} &nbsp;·&nbsp; {sector}
-</div>
-<div class="page-sub">AI Sentiment & Prediction Dashboard</div>
+<div class="page-title">{selected_ticker} — {company_name}</div>
+<div class="page-sub">{sector} &nbsp;·&nbsp; AI Sentiment & Prediction Dashboard</div>
 """, unsafe_allow_html=True)
 
-# ── Get ticker data ───────────────────────────────────────────────────────────
+# ── Get ticker data — merge live predictions into historical ──────────────────
 tkr = daily[daily['ticker'] == selected_ticker].sort_values('matched_market_date').copy()
-tkr_recent = tkr.tail(lookback)
-tkr_last = tkr.iloc[-1]
-tkr_prev = tkr.iloc[-2] if len(tkr) > 1 else tkr.iloc[-1]
 
-# Sentiment score: rescale from [-1,1] to [0,100]
+# Merge today's live data on top of historical so all metrics update daily
+if live_preds is not None:
+    lp_tkr = live_preds[live_preds['ticker'] == selected_ticker].copy()
+    if len(lp_tkr):
+        lp_tkr = lp_tkr.sort_values('date')
+        live_row = lp_tkr.iloc[-1]
+        # Build a row matching daily_data columns
+        live_daily_row = {
+            'ticker':               selected_ticker,
+            'matched_market_date':  pd.to_datetime(live_row['date']),
+            'sentiment_mean':       float(live_row.get('sentiment_mean', tkr.iloc[-1]['sentiment_mean'])),
+            'close':                float(live_row.get('close', tkr.iloc[-1]['close'])),
+            'daily_return':         float(live_row.get('daily_return', 0)),
+            'article_count':        int(live_row.get('article_count', 0)),
+            'ai_innovation':        int(live_row.get('ai_innovation', 0)),
+            'collaboration':        int(live_row.get('collaboration', 0)),
+            'leadership':           int(live_row.get('leadership', 0)),
+            'regulation':           int(live_row.get('regulation', 0)),
+            'litigation':           int(live_row.get('litigation', 0)),
+        }
+        live_df = pd.DataFrame([live_daily_row])
+        # Only append if date is newer than last historical date
+        if live_daily_row['matched_market_date'] > tkr['matched_market_date'].max():
+            tkr = pd.concat([tkr, live_df], ignore_index=True).sort_values('matched_market_date')
+
+tkr_recent = tkr.tail(lookback)
+tkr_last   = tkr.iloc[-1]
+tkr_prev   = tkr.iloc[-2] if len(tkr) > 1 else tkr.iloc[-1]
+price_date = tkr_last['matched_market_date']
+
+# Sentiment score
 sent_score  = int((tkr_last['sentiment_mean'] + 1) / 2 * 100)
 sent_prev   = int((tkr_prev['sentiment_mean'] + 1) / 2 * 100)
 sent_delta  = sent_score - sent_prev
-sent_label  = 'Positive' if sent_score >= 60 else 'Neutral' if sent_score >= 40 else 'Negative'
-sent_color  = POSITIVE if sent_score >= 60 else ACCENT2 if sent_score >= 40 else NEGATIVE
+if sent_score >= 70:
+    sent_label = 'Strongly Bullish'
+    sent_color = '#00E676'
+elif sent_score >= 55:
+    sent_label = 'Bullish'
+    sent_color = POSITIVE
+elif sent_score >= 45:
+    sent_label = 'Neutral'
+    sent_color = ACCENT2
+elif sent_score >= 30:
+    sent_label = 'Bearish'
+    sent_color = '#FF7043'
+else:
+    sent_label = 'Strongly Bearish'
+    sent_color = NEGATIVE
+
+# Override with live label if available
+if live_preds is not None:
+    lp_sent = live_preds[live_preds['ticker'] == selected_ticker]
+    if len(lp_sent) and 'sentiment_label' in lp_sent.columns:
+        live_label = lp_sent.sort_values('date').iloc[-1].get('sentiment_label', '')
+        if live_label:
+            sent_label = live_label
 
 # Price info
-# Price info — prefer live_predictions.csv if available
-price_now  = tkr_last['close']
-price_prev = tkr_prev['close']
-price_date = last_date
+price_now   = tkr_last['close']
+price_prev  = tkr_prev['close']
+price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
+price_color = POSITIVE if price_chg >= 0 else NEGATIVE
 
-if live_preds is not None:
-    lp_tkr = live_preds[live_preds['ticker'] == selected_ticker]
-    if len(lp_tkr) and pd.notna(lp_tkr.iloc[-1].get('close', None)):
-        live_row   = lp_tkr.sort_values('date').iloc[-1]
-        price_now  = live_row['close']
-        price_date = pd.to_datetime(live_row['date'])
-        if pd.notna(live_row.get('daily_return', None)):
-            price_chg   = live_row['daily_return'] * 100
-            price_color = POSITIVE if price_chg >= 0 else NEGATIVE
-        else:
-            price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
-            price_color = POSITIVE if price_chg >= 0 else NEGATIVE
-    else:
-        price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
-        price_color = POSITIVE if price_chg >= 0 else NEGATIVE
-else:
-    price_chg   = ((price_now - price_prev) / price_prev * 100) if price_prev else 0
-    price_color = POSITIVE if price_chg >= 0 else NEGATIVE
-
-# Topic mix today
-topic_cols  = ['ai_innovation','collaboration','leadership','regulation','litigation']
-topic_labels= ['AI Innovation','Collaboration','Leadership','Regulation','Litigation']
-topic_vals  = [int(tkr_last.get(c, 0)) for c in topic_cols]
-total_arts  = int(tkr_last['article_count'])
+# Topic mix — now uses live data if available
+topic_cols   = ['ai_innovation','collaboration','leadership','regulation','litigation']
+topic_labels = ['AI Innovation','Collaboration','Leadership','Regulation','Litigation']
+topic_vals   = [int(tkr_last.get(c, 0)) for c in topic_cols]
+total_arts   = int(tkr_last['article_count'])
 
 # Best model for this ticker
 bm_row = best_models[best_models['Entity'] == selected_ticker]
@@ -342,21 +359,21 @@ best_model_name = bm_row['Model'].values[0] if len(bm_row) else 'Logistic Regres
 best_model_acc  = bm_row['Accuracy (%)'].values[0] if len(bm_row) else 50.0
 best_model_auc  = bm_row['ROC-AUC'].values[0] if len(bm_row) else 0.5
 
-# Prediction: use sentiment + recent return to compute a simple rule
-# (In production this would call your saved sklearn model)
-avg_sent_5d = tkr.tail(5)['sentiment_mean'].mean()
-avg_ret_5d  = tkr.tail(5)['daily_return'].mean()
-pred_score  = avg_sent_5d * 0.6 + avg_ret_5d * 0.4
-pred_up     = pred_score > 0
-pred_prob   = min(0.95, max(0.50, 0.50 + abs(pred_score) * 5))
-
-# Live prediction override if available
+# Prediction — use live data if available, else compute from recent history
 if live_preds is not None:
     lp = live_preds[live_preds['ticker'] == selected_ticker]
     if len(lp):
-        row = lp.iloc[-1]
-        pred_up   = row.get('prediction', 1) == 1
-        pred_prob = row.get('probability', pred_prob)
+        row     = lp.sort_values('date').iloc[-1]
+        pred_up   = int(row.get('prediction', 1)) == 1
+        pred_prob = float(row.get('probability', 0.55))
+    else:
+        avg_sent_5d = tkr.tail(5)['sentiment_mean'].mean()
+        pred_up     = avg_sent_5d > 0
+        pred_prob   = min(0.95, max(0.50, 0.50 + abs(avg_sent_5d) * 5))
+else:
+    avg_sent_5d = tkr.tail(5)['sentiment_mean'].mean()
+    pred_up     = avg_sent_5d > 0
+    pred_prob   = min(0.95, max(0.50, 0.50 + abs(avg_sent_5d) * 5))
 
 # ── TOP ROW: 4 metric cards ───────────────────────────────────────────────────
 c1, c2, c3, c4 = st.columns(4)
@@ -466,7 +483,6 @@ with left_col:
     )
     st.plotly_chart(fig_topic, use_container_width=True, config={'displayModeBar': False})
 
-    # Article count note
     other_arts = max(0, total_arts - sum(topic_vals))
     st.markdown(f"""
     <div style="font-size:0.78rem; color:{TEXT_DIM}; margin-top:-1rem; padding: 0 0.5rem;">
