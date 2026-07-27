@@ -341,7 +341,13 @@ if live_preds is not None:
         if live_daily_row['matched_market_date'] > tkr['matched_market_date'].max():
             tkr = pd.concat([tkr, live_df], ignore_index=True).sort_values('matched_market_date')
 
-tkr_recent = tkr.tail(lookback)
+# Chart data — use historical study period only (Jan 2022 - Dec 2025)
+# Filter to study period then apply lookback window from dropdown
+STUDY_END   = pd.Timestamp('2025-12-31')
+STUDY_START = pd.Timestamp('2022-01-01')
+tkr_hist    = tkr[(tkr['matched_market_date'] >= STUDY_START) &
+                  (tkr['matched_market_date'] <= STUDY_END)].copy()
+tkr_recent  = tkr_hist.tail(lookback)
 tkr_last   = tkr.iloc[-1]
 tkr_prev   = tkr.iloc[-2] if len(tkr) > 1 else tkr.iloc[-1]
 price_date = tkr_last['matched_market_date']
@@ -524,7 +530,7 @@ with left_col:
     """, unsafe_allow_html=True)
 
 with right_col:
-    st.markdown(f'<div class="section-header">Sentiment vs Price ({lookback}D)</div>',
+    st.markdown(f'<div class="section-header">Sentiment vs Price — Last {lookback} Trading Days (Study Period Jan 2022–Dec 2025)</div>',
                 unsafe_allow_html=True)
 
     fig_main = make_subplots(specs=[[{"secondary_y": True}]])
@@ -667,10 +673,10 @@ with tab1:
     </div>""", unsafe_allow_html=True)
 
 with tab2:
-    st.markdown(f'<div class="section-header">Daily Sentiment History — {selected_ticker} (Last {lookback} days)</div>',
+    st.markdown(f'<div class="section-header">Daily Sentiment History — {selected_ticker} · Last {lookback} Trading Days (Jan 2022–Dec 2025)</div>',
                 unsafe_allow_html=True)
 
-    hist = tkr.tail(lookback)[['matched_market_date','sentiment_mean',
+    hist = tkr_hist.tail(lookback)[['matched_market_date','sentiment_mean',
                                 'close','article_count','ai_innovation',
                                 'collaboration','leadership','regulation','litigation',
                                 'daily_return']].copy()
