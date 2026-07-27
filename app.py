@@ -341,8 +341,7 @@ if live_preds is not None:
         if live_daily_row['matched_market_date'] > tkr['matched_market_date'].max():
             tkr = pd.concat([tkr, live_df], ignore_index=True).sort_values('matched_market_date')
 
-cutoff = tkr['matched_market_date'].max() - pd.Timedelta(days=lookback * 2)
-tkr_recent = tkr[tkr['matched_market_date'] >= cutoff].tail(lookback)
+tkr_recent = tkr.tail(lookback)
 tkr_last   = tkr.iloc[-1]
 tkr_prev   = tkr.iloc[-2] if len(tkr) > 1 else tkr.iloc[-1]
 price_date = tkr_last['matched_market_date']
@@ -671,8 +670,7 @@ with tab2:
     st.markdown(f'<div class="section-header">Daily Sentiment History — {selected_ticker} (Last {lookback} days)</div>',
                 unsafe_allow_html=True)
 
-    hist_cutoff = tkr['matched_market_date'].max() - pd.Timedelta(days=lookback * 2)
-    hist = tkr[tkr['matched_market_date'] >= hist_cutoff].tail(lookback)[['matched_market_date','sentiment_mean',
+    hist = tkr.tail(lookback)[['matched_market_date','sentiment_mean',
                                 'close','article_count','ai_innovation',
                                 'collaboration','leadership','regulation','litigation',
                                 'daily_return']].copy()
