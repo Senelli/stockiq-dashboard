@@ -202,6 +202,15 @@ st.markdown(f"""
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
     }}
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {{
+        background-color: #FFFFFF !important;
+        border-color: {ACCENT} !important;
+    }}
+    [data-testid="stSidebar"] div[data-baseweb="select"] span,
+    [data-testid="stSidebar"] div[data-baseweb="select"] div {{
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
