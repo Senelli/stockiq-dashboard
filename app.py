@@ -24,7 +24,7 @@ st.set_page_config(
 
 # ── Theme colors ──────────────────────────────────────────────────────────────
 DARK_BG    = "#0D1B2A"
-CARD_BG    = "#385B82"
+CARD_BG    = "#243B55"
 ACCENT     = "#00C9A7"
 ACCENT2    = "#F4B942"
 TEXT_MAIN  = "#E8F0FE"
@@ -201,15 +201,6 @@ st.markdown(f"""
     div[data-baseweb="select"] div {{
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
-    }}
-    [data-testid="stSidebar"] div[data-baseweb="select"] > div {{
-        background-color: #FFFFFF !important;
-        border-color: {ACCENT} !important;
-    }}
-    [data-testid="stSidebar"] div[data-baseweb="select"] span,
-    [data-testid="stSidebar"] div[data-baseweb="select"] div {{
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
     }}
 </style>
 """, unsafe_allow_html=True)
