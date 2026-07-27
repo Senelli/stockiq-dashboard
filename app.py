@@ -24,7 +24,7 @@ st.set_page_config(
 
 # ── Theme colors ──────────────────────────────────────────────────────────────
 DARK_BG    = "#0D1B2A"
-CARD_BG    = "#243B55"
+CARD_BG    = "#2E5F8A"
 ACCENT     = "#00C9A7"
 ACCENT2    = "#F4B942"
 TEXT_MAIN  = "#E8F0FE"
