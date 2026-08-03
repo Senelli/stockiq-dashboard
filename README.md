@@ -1,30 +1,132 @@
 # StockIQ — AI Stock Sentiment Monitor
 
-**Cal Poly Pomona MSBA Capstone · SJ**  
-Research prototype. Not financial advice.
+**Cal Poly Pomona MSBA Capstone · GBA Capstone Group**  
+Live research prototype. Not financial advice.
+
+🌐 **Live dashboard:** https://stockiq-dashboard.streamlit.app  
+📁 **GitHub repo:** https://github.com/Senelli/stockiq-dashboard
+
+---
+
+## Contributors
+
+This dashboard and the underlying research study were produced as part of the Cal Poly Pomona Master of Science in Business Analytics (MSBA) capstone project.
+
+| Name | Role |
+|---|---|
+| **Aneesh Aryal** | Phase 2 sentiment model development and evaluation · 8 model versions (2a–2h) · 19 models per ticker · Performance evaluation via MASE, Accuracy, and AUC |
+| **Aditi Bhatnagar** | Phase 1 price-only baseline models · 19 models per ticker (12 regression, 7 classification) · R², MASE, directional accuracy, F1, ROC-AUC evaluation · Baseline performance floor establishment |
+| **Gilbert Garcia** | Data collection and organization · Historical price data and ~45,000 AI news articles via Alpha Vantage API · Dataset alignment by company, timestamp, and trading date · Event-study methodology for abnormal returns analysis |
+| **Anna He** | Market impact analysis across six sector groups · Phase 1 vs Phase 2 consolidation pipeline · Group-level rollup logic · Sector normalization and coverage analysis |
+| **Senelli Jinadasa** | Dashboard creator · Keyword classification pipeline · BERTopic topic modeling · Phase 2 versions 2g and 2h (topic feature extensions) · Analytical Objective 2 |
+| **Ishmam Kamal** | FinBERT sentiment scoring · Ticker-specific and general market news sentiment · Model evaluation using lagged returns and sentiment features · Comparison of ticker-specific vs general news sentiment effectiveness |
+
+**Committee Chair:** Dr. Xuesong (Sonya) Zhang, Cal Poly Pomona  
+**Committee Member:** Dr. Hyounae (Kelly) Min, Cal Poly Pomona
 
 ---
 
 ## What this is
 
-A live dashboard that shows:
-- Daily sentiment score per stock (FinBERT + Alpha Vantage)
-- Today's topic mix (keyword classifier from Analytical Objective 2)
-- 14-day sentiment vs price chart
-- Next-day directional prediction (Phase 2 best model per stock)
-- All 16 stocks overview
+A fully interactive dashboard connected to actual project data, model results, and live market data. It is not a mock-up.
 
-Data: 17,761 articles · 16 AI/tech stocks · Jan 2022–Dec 2025  
-Best model: Version 2f (FinBERT General News) · Mean MASE 0.5168
+**What the dashboard shows:**
+
+- **Sentiment score** — daily sentiment from Alpha Vantage (aggregates 50+ sources including Reuters, Bloomberg, CNBC, MarketWatch). Labeled as Strongly Bullish / Bullish / Neutral / Bearish / Strongly Bearish
+- **Live closing price** — pulled daily via yfinance, shown with day-over-day change
+- **Next-day directional prediction** — UP or DOWN with confidence percentage, based on best Phase 2 model per ticker
+- **5-day sentiment trend** — Improving or Declining
+- **Today's topic mix** — keyword classifier counts per category: AI Innovation, Collaboration & Acquisitions, Leadership & Governance, AI-related Policy & Regulation, Litigation & Security
+- **Sentiment vs Price chart** — study period Jan 2022–Dec 2025, configurable window (14 / 30 / 60 / 90 trading days)
+- **Article history** — daily sentiment and topic breakdown, same configurable window
+- **Model accuracy tab** — Phase 2 classification accuracy across all 8 versions (2a–2h) per stock
+- **All 16 stocks overview** — live sentiment scores, prices, predictions in one table
+
+**Data:**
+- 17,761 news articles · 16 AI/tech stocks · Jan 2022–Dec 2025
+- Stocks: AAPL, ADBE, AI, AMD, AMZN, CRM, GOOGL, IBM, INTC, META, MSFT, NVDA, ORCL, PLTR, TSLA, TSM
+- Grouped into 6 sectors: AI Cloud Powerhouses, AI Hardware Enablers, Enterprise AI Integrators, Pure-Play & Specialized AI, Consumer AI Ecosystem, AI Mobility & Robotics
 
 ---
 
-## Deploy to Streamlit Cloud (free, ~10 minutes)
+## How the daily refresh works
+
+Every weekday at **9:45 AM ET**, GitHub Actions automatically runs `daily_refresh.py` which:
+
+1. Pulls the latest 50 articles per ticker from Alpha Vantage News Sentiment API (16 API calls total — free tier allows 25/day)
+2. Runs the keyword classifier on all article summaries to assign topic categories (AI Innovation, Collaboration, Leadership, Regulation, Litigation)
+3. Aggregates Alpha Vantage sentiment scores per ticker per day
+4. Pulls latest closing price and daily return via yfinance
+5. Computes next-day directional prediction based on sentiment direction
+6. Writes results to `data/live_predictions.csv`
+7. GitHub Actions commits and pushes the updated CSV to the repo
+8. Streamlit reads the updated file and refreshes automatically
+
+No manual intervention required after setup.
+
+---
+
+## Sentiment scoring
+
+Sentiment scores come from the **Alpha Vantage overall_sentiment_score** field, which is returned directly in the API response for each article. Alpha Vantage aggregates news from 50+ sources including Reuters, Bloomberg, CNBC, MarketWatch, and others. The raw score is in [-1, 1] and is rescaled to 0–100 for display.
+
+FinBERT (ProsusAI/finbert) was used during the Phase 2 research study for historical scoring and is included in `daily_refresh.py` as an optional scoring layer — it runs in GitHub Actions if the `--skip_finbert` flag is not passed.
+
+---
+
+## Prediction method
+
+The next-day directional prediction uses the mean sentiment score from today's articles:
+
+- Positive mean sentiment → predict UP
+- Negative mean sentiment → predict DOWN
+- Confidence is derived from the magnitude of the sentiment signal
+
+The best Phase 2 classification model per ticker (from `best_models.csv`) is shown for reference alongside its accuracy and ROC-AUC from the research study.
+
+---
+
+## Phase 2 model versions
+
+| Version | Sentiment Source | Topic Features | Overall Rank |
+|---|---|---|---|
+| 2a | AV General Sentiment | None | 3 |
+| 2b | AV Ticker Sentiment | None | 7 |
+| 2c | FinBERT Ticker-Linked | None | 5 |
+| 2d | AV + FinBERT Combined | None | 2 |
+| 2e | FinBERT Ticker-Focused | None | 4 |
+| 2f | FinBERT General News | None | **1 (best)** |
+| 2g | FinBERT General News | 7 keyword topic flags | 5 |
+| 2h | FinBERT General News | 28 BERTopic cluster flags | 7 |
+
+Best regression version: **2f** — Mean MASE 0.5168  
+Best classification result: **TSLA Gradient Boosting (2f)** — 69.70% accuracy
+
+---
+
+## File structure
+
+```
+stockiq_dashboard/
+├── app.py                          # Main Streamlit dashboard
+├── daily_refresh.py                # Daily data pull and scoring script
+├── requirements.txt                # Python dependencies (Streamlit Cloud)
+├── daily_data.csv                  # Historical sentiment + price (Jan 2022–Dec 2025)
+├── best_models.csv                 # Best Phase 2 model per ticker
+├── data/
+│   └── live_predictions.csv        # Updated daily by GitHub Actions
+└── .github/
+    └── workflows/
+        └── daily_refresh.yml       # Weekday schedule: 9:45 AM ET Mon–Fri
+```
+
+---
+
+## Setup — Deploy to Streamlit Cloud
 
 ### Step 1 — Push to GitHub
 
 ```bash
-# Create a new GitHub repo (public or private) and push this folder
 git init
 git add .
 git commit -m "Initial deploy"
@@ -36,113 +138,57 @@ git push -u origin main
 
 1. Go to **https://share.streamlit.io**
 2. Sign in with GitHub
-3. Click **New app**
-4. Select your repo → branch: `main` → Main file: `app.py`
-5. Click **Deploy**
+3. Click **Create app** → **Deploy a public app from GitHub**
+4. Repository: `YOUR_USERNAME/stockiq-dashboard`
+5. Branch: `main` · Main file: `app.py`
+6. App URL: `stockiq-dashboard`
+7. Click **Deploy**
 
-Your dashboard will be live at:  
-`https://YOUR_USERNAME-stockiq-dashboard-app-XXXXX.streamlit.app`
+### Step 3 — Add Alpha Vantage API key
 
----
+**Streamlit Secrets** (for the dashboard):
+1. Manage app → Settings → Secrets
+2. Add: `AV_API_KEY = "your_key_here"`
 
-## Set up daily auto-refresh (GitHub Actions)
+**GitHub Secrets** (for daily refresh):
+1. Repo → Settings → Secrets and variables → Actions
+2. New secret: Name `AV_API_KEY`, Value: your key
 
-### Step 1 — Add your Alpha Vantage API key as a secret
-
-1. In your GitHub repo → **Settings** → **Secrets and variables** → **Actions**
-2. Click **New repository secret**
-3. Name: `AV_API_KEY`
-4. Value: your Alpha Vantage API key (get one free at https://www.alphavantage.co/support/#api-key)
-5. Click **Add secret**
-
-### Step 2 — Enable GitHub Actions
-
-The file `.github/workflows/daily_refresh.yml` is already included.  
-It runs automatically at **9:45 AM ET every weekday**.
-
-To trigger manually:
-1. Go to your repo → **Actions** tab
-2. Click **Daily Sentiment Refresh**
-3. Click **Run workflow**
-
-### Step 3 — Verify it works
-
-After the first run, check that `data/live_predictions.csv` was updated in your repo.  
-Streamlit reads this file and refreshes automatically.
+Get a free key at: https://www.alphavantage.co/support/#api-key
 
 ---
 
-## Run manually (instead of GitHub Actions)
+## Run locally
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
 
-# Run the daily refresh
+# Run daily refresh manually
 python daily_refresh.py --api_key YOUR_AV_KEY
 
-# Run the dashboard locally
+# Run dashboard locally
 streamlit run app.py
-```
-
----
-
-## File structure
-
-```
-stockiq_dashboard/
-├── app.py                          # Main Streamlit dashboard
-├── daily_refresh.py                # Daily data pull script
-├── requirements.txt                # Python dependencies
-├── daily_data.csv                  # Historical data (2022-2025)
-├── best_models.csv                 # Best model per ticker
-├── data/
-│   └── live_predictions.csv        # Updated daily by GitHub Actions
-└── .github/
-    └── workflows/
-        └── daily_refresh.yml       # Automatic daily schedule
-```
-
----
-
-## Adding your Alpha Vantage API key locally
-
-Create a `.env` file (never commit this):
-```
-AV_API_KEY=your_key_here
-```
-
-Or pass it directly:
-```bash
-python daily_refresh.py --api_key your_key_here
 ```
 
 ---
 
 ## Free tier limits
 
-- Alpha Vantage: 25 requests/day, 5/min
-- This app uses 16 requests/day (one per ticker)
-- 9 requests to spare for manual testing
-
----
-
-## How the prediction works
-
-1. `daily_refresh.py` fetches latest 50 articles per ticker from Alpha Vantage
-2. Keyword classifier assigns each article to a category (AI Innovation, Collaboration, etc.)
-3. Sentiment scores come directly from Alpha Vantage (no need to run FinBERT daily)
-4. Features are aggregated per ticker per day
-5. A pre-trained model (best per ticker from Phase 2) predicts up/down
-6. Results written to `data/live_predictions.csv`
-7. Streamlit reads the CSV and updates the dashboard
+| Service | Limit | This app uses |
+|---|---|---|
+| Alpha Vantage | 25 requests/day, 5/min | 16/day (one per ticker) |
+| GitHub Actions | 2,000 min/month | ~4 min/day = ~80 min/month |
+| Streamlit Cloud | 1 app free | 1 app |
+| yfinance | Unlimited (unofficial) | 1 batch call/day |
 
 ---
 
 ## Research context
 
-This dashboard is the deployment layer for the Phase 2 capstone analysis:
-- **Analytical Objective 2**: Keyword classification of 17,761 news articles into 5 topic categories
-- **Phase 2 models**: 8 versions (2a-2h) using AV sentiment, FinBERT, keyword topics, BERTopic topics
-- **Best regression version**: 2f (FinBERT General News, MASE=0.5168)
-- **Best classification**: TSLA Gradient Boosting in 2f (69.70% accuracy)
+This dashboard is the deployment layer for the Cal Poly Pomona MSBA capstone study:
+
+- **Analytical Objective 2**: Keyword classification of 17,761 news articles into 5 topic categories (AI Innovation, Collaboration & Acquisitions, Leadership & Governance, AI-related Policy & Regulation, Litigation & Security) using a weighted keyword-mapping classifier achieving 89.8% classification rate. BERTopic with FinBERT embeddings applied for exploratory semantic clustering.
+- **Phase 2 models**: 8 versions (2a–2h) testing Alpha Vantage sentiment, ticker-linked FinBERT, general news FinBERT, keyword topic flags, and BERTopic cluster flags as predictive features for next-day stock returns across 16 AI/tech stocks
+- **Best regression version**: 2f — FinBERT General News — Mean MASE 0.5168
+- **Best classification result**: TSLA Gradient Boosting Classifier in Version 2f — 69.70% accuracy, AUC 0.6682
+- **Study period**: January 2022 – December 2025
