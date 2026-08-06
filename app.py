@@ -177,9 +177,22 @@ st.markdown(f"""
         color: {TEXT_MAIN} !important;
         fill: {TEXT_MAIN} !important;
     }}
-    header[data-testid="stHeader"] a,
-    header[data-testid="stHeader"] button:not([data-testid="collapsedControl"]) {{
-        display: none !important;
+    header[data-testid="stHeader"] {{
+        background-color: {DARK_BG} !important;
+        border-bottom: 1px solid {BORDER} !important;
+    }}
+    header[data-testid="stHeader"] * {{
+        color: {TEXT_MAIN} !important;
+        fill: {TEXT_MAIN} !important;
+    }}
+    [data-testid="collapsedControl"] {{
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        color: {TEXT_MAIN} !important;
+    }}
+    [data-testid="collapsedControl"] svg {{
+        fill: {TEXT_MAIN} !important;
     }}
     div[data-baseweb="select"] > div:first-child {{
         background-color: #1E3A5F !important;
